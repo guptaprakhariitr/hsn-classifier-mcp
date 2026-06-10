@@ -1,7 +1,7 @@
 import { extractBearer, resolveKey, Tier } from "./auth";
 import { checkAndIncrement, quotaErrorResponse } from "./billing";
 import { McpServer, ToolContext, isJsonRpcRequest } from "./mcp-server";
-import { handleUpgrade, handleAccount, handleAccountRotate, handleWelcome } from "./checkout";
+import { handleUpgrade, handleAccount, handleAccountRotate, handleWelcome, handleAccountExport, handleFavicon, buildSocialMeta } from "./checkout";
 import { handleDodoWebhook } from "./webhook";
 import { buildTools } from "./tools";
 import { DATASET_STATS } from "./upstream";
@@ -19,6 +19,8 @@ export interface Env {
   RESEND_API_KEY?: string;
   FROM_EMAIL?: string;
   PRODUCT_NAME?: string;
+  PRODUCT_TAGLINE?: string;
+  PRODUCT_URL?: string;
 }
 
 const SERVER_INFO = { name: "hsn-classifier-mcp", version: "0.1.0" };
@@ -30,9 +32,11 @@ export default {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/health") return json({ ok: true, server: SERVER_INFO, dataset: DATASET_STATS });
     if (request.method === "GET" && url.pathname === "/llms.txt") return new Response(LLMS_TXT, { headers: { "Content-Type": "text/markdown" } });
-    if (request.method === "GET" && url.pathname === "/") return new Response(LANDING, { headers: { "Content-Type": "text/html" } });
+    if (request.method === "GET" && (url.pathname === "/favicon.ico" || url.pathname === "/favicon.svg")) return handleFavicon();
+    if (request.method === "GET" && url.pathname === "/") return new Response(renderLanding(env, url), { headers: { "Content-Type": "text/html" } });
     if (request.method === "GET" && url.pathname === "/upgrade") return handleUpgrade(request, env, new URL(request.url).origin);
     if (request.method === "GET" && url.pathname === "/account") return withCors(await handleAccount(request, env));
+    if (request.method === "GET" && url.pathname === "/account/export") return withCors(await handleAccountExport(request, env));
     if (request.method === "GET" && (url.pathname === "/welcome" || url.pathname === "/welcome.json")) return withCors(await handleWelcome(request, env));
     if (request.method === "POST" && url.pathname === "/account/rotate") return withCors(await handleAccountRotate(request, env));
     if (request.method === "POST" && url.pathname === "/webhooks/dodo") return await handleDodoWebhook(request, env);
@@ -73,11 +77,21 @@ const LLMS_TXT = `# hsn-classifier-mcp
 Endpoint: https://hsn-classifier-mcp.prakhar-cognizance.workers.dev/mcp
 `;
 
-const LANDING = `<!doctype html><html><head><meta charset="utf-8"><title>hsn-classifier-mcp</title>
-<style>body{font:16px/1.5 system-ui,sans-serif;max-width:720px;margin:4rem auto;padding:0 1rem}code{background:#f3f3f3;padding:.1em .35em;border-radius:3px}</style></head>
-<body><h1>hsn-classifier-mcp</h1>
-<p>HSN code lookup + product classification for Indian GST. Embedded ${DATASET_STATS.count}-entry dataset.</p>
+function renderLanding(env: Env, url: URL): string {
+  const productName = env.PRODUCT_NAME ?? "hsn-classifier-mcp";
+  const tagline = env.PRODUCT_TAGLINE ?? `HSN code lookup + product classification for Indian GST. Embedded ${DATASET_STATS.count}-entry dataset.`;
+  const meta = buildSocialMeta(env, {
+    title: productName,
+    description: tagline,
+    url: env.PRODUCT_URL || url.origin,
+  });
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${productName}</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:720px;margin:4rem auto;padding:0 1rem}code{background:#f3f3f3;padding:.1em .35em;border-radius:3px}</style>${meta}
+</head>
+<body><h1>${productName}</h1>
+<p>${tagline}</p>
 <p>Free: 50 lookups/mo. Paid from $9/mo.</p>
 <p><code>POST https://hsn-classifier-mcp.prakhar-cognizance.workers.dev/mcp</code></p>
 <p>See <a href="/llms.txt">/llms.txt</a> for the tool manifest, <a href="/upgrade?tier=solo">/upgrade?tier=solo</a> to subscribe.</p>
 </body></html>`;
+}
