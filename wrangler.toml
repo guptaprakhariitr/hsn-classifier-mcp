@@ -1,0 +1,27 @@
+name = "hsn-classifier-mcp"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "7935046fc65e4f328f8be2d0faa5ce7e"
+
+[[kv_namespaces]]
+binding = "USAGE"
+id = "39bd2605d4e848848e5b6a864f71e0cd"
+
+[vars]
+UPGRADE_URL = "https://hsn-classifier-mcp.prakhar-cognizance.workers.dev/upgrade"
+PRODUCT_NAME = "hsn-classifier-mcp"
+DODO_PRODUCT_ID_SOLO = "pdt_0NglLkrJ5W2tlFaVlOl29"
+DODO_PRODUCT_ID_TEAM = "pdt_0NglLku7aB7nGUkVL1rzG"
+DODO_PRODUCT_ID_PRO  = "pdt_0NglLkw2BXnWnoEDbNsm1"
+FROM_EMAIL = "prakshatechnologies@gmail.com"
+DODO_BASE = "https://live.dodopayments.com"
+CUSTOMER_PORTAL_RETURN_URL = "https://hsn-classifier-mcp.prakhar-cognizance.workers.dev/account"
+
+# Secrets: DODO_API_KEY, DODO_WEBHOOK_SECRET, ADMIN_TOKEN
