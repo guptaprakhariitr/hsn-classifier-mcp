@@ -5,7 +5,7 @@
   "description": "MCP server for AI agents: look up Indian HSN (Harmonized System Nomenclature) codes for GST classification. Exact-code lookup, keyword search, free-text product classification. Embedded dataset (~4,700 entries).",
   "type": "module",
   "main": "src/index.ts",
-  "homepage": "https://hsn-classifier-mcp.prakhar-cognizance.workers.dev",
+  "homepage": "https://hsn-classifier-mcp.atlasword.workers.dev",
   "repository": { "type": "git", "url": "https://github.com/guptaprakhariitr/hsn-classifier-mcp.git" },
   "scripts": { "dev": "wrangler dev", "deploy": "wrangler deploy", "test": "vitest run", "typecheck": "tsc --noEmit", "tail": "wrangler tail" },
   "keywords": ["mcp", "mcp-server", "model-context-protocol", "claude", "cursor", "cline", "ai-agent", "hsn", "gst", "india", "tax", "classification", "invoice", "ecommerce"],

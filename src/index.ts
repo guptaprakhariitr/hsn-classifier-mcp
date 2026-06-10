@@ -79,7 +79,7 @@ const LLMS_TXT = `# hsn-classifier-mcp
 - search_hsn(query, limit?) — keyword search
 - classify_product(name) — best-match code for a free-text product name
 
-Endpoint: https://hsn-classifier-mcp.prakhar-cognizance.workers.dev/mcp
+Endpoint: https://hsn-classifier-mcp.atlasword.workers.dev/mcp
 `;
 
 function renderLanding(env: Env, url: URL): string {
@@ -96,7 +96,7 @@ function renderLanding(env: Env, url: URL): string {
 <body><h1>${productName}</h1>
 <p>${tagline}</p>
 <p>Free: 50 lookups/mo. Paid from $9/mo.</p>
-<p><code>POST https://hsn-classifier-mcp.prakhar-cognizance.workers.dev/mcp</code></p>
+<p><code>POST https://hsn-classifier-mcp.atlasword.workers.dev/mcp</code></p>
 <p>See <a href="/llms.txt">/llms.txt</a> for the tool manifest, <a href="/upgrade?tier=solo">/upgrade?tier=solo</a> to subscribe.</p>
 </body></html>`;
 }

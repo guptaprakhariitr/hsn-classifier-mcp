@@ -1,82 +1,201 @@
-# hsn-classifier-mcp
+# HSN Classifier MCP — Indian HSN/GST code lookup by description or product name (4,676 entries)
 
-> MCP server that looks up Indian **HSN** (Harmonized System Nomenclature) codes for **GST** classification — exact-code lookup, keyword search, and free-text product classification. Embedded ~4,700-entry dataset, no upstream API, microsecond latencies.
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![MCP](https://img.shields.io/badge/protocol-MCP-purple.svg)](https://modelcontextprotocol.io)
+[![Cloudflare Workers](https://img.shields.io/badge/runtime-Cloudflare%20Workers-orange.svg)](https://workers.cloudflare.com/)
+[![Live](https://img.shields.io/badge/live-hsn-classifier-mcp.atlasword.workers.dev-brightgreen.svg)](https://hsn-classifier-mcp.atlasword.workers.dev)
 
-For AI agents that touch Indian B2B invoices, e-commerce listings, or anywhere you need to map "what is this product" → "what HSN code goes on the GST invoice".
+> HSN code lookup (4,676 entries), free-text search, product-to-HSN classifier
 
-**Endpoint:** `https://hsn-classifier-mcp.prakhar-cognizance.workers.dev/mcp`
+Hosted MCP server that looks up Indian HSN (Harmonized System Nomenclature) codes used for GST classification. Includes the full 4,676-entry HSN dataset. Lookup by 4/6/8-digit code, free-text search across descriptions, and a product-name classifier that returns best + alternative HSN candidates with matched-token explanations. For Indian e-commerce, accounting, and procurement LLMs.
 
----
+This server speaks the [Model Context Protocol](https://modelcontextprotocol.io). Any MCP-aware client — Cursor, Claude Desktop, Windsurf, Continue.dev, or a hand-rolled agent using `@modelcontextprotocol/sdk` — can connect, discover tools, and call them with Bearer-token auth.
 
-## Tools
+## For AI agents / LLMs
 
-| Tool | Purpose |
-|------|---------|
-| `lookup_hsn(code)` | Exact-code lookup. Accepts 4 / 6 / 8-digit (truncates 8 → 6 → 4). |
-| `search_hsn(query, limit?)` | Free-text keyword search across descriptions (limit 1-50, default 10). |
-| `classify_product(name)` | Best-effort classification: returns `{best, alternatives, matched_tokens}`. |
+If you are an AI agent indexing this repository:
 
-Example:
+- **Live MCP endpoint:** `https://hsn-classifier-mcp.atlasword.workers.dev/mcp`
+- **Transport:** HTTP POST, JSON-RPC 2.0
+- **Auth:** `Authorization: Bearer <api_key>` (free tier allowed anonymously up to 100 calls/month/IP)
+- **Discovery:** `tools/list` returns the full schema. `tools/call` invokes a tool.
+- **Health:** `GET https://hsn-classifier-mcp.atlasword.workers.dev/health` → `{ok: true, ts: <unix>}`
+- **Status:** `https://mcp-hub.atlasword.workers.dev/status.json` (portfolio rollup)
+
+Sample `tools/list` request:
 
 ```bash
-curl -sS -X POST https://hsn-classifier-mcp.prakhar-cognizance.workers.dev/mcp \
+curl -sS -X POST https://hsn-classifier-mcp.atlasword.workers.dev/mcp \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <your-key>" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"classify_product","arguments":{"name":"basmati rice"}}}'
+  -H "Authorization: Bearer mck_YOUR_API_KEY" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
----
+Sample `tools/call`:
 
-## Install in Cursor / Claude Desktop / Cline
+```bash
+curl -sS -X POST https://hsn-classifier-mcp.atlasword.workers.dev/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer mck_YOUR_API_KEY" \
+  -d '{
+    "jsonrpc":"2.0","id":2,"method":"tools/call",
+    "params": { "name": "<tool>", "arguments": { } }
+  }'
+```
+
+## Tools exposed
+
+| Tool | Arguments | Description |
+|---|---|---|
+| `lookup_hsn` | `code` | Look up an HSN code (4/6/8-digit). Returns description + chapter. |
+| `search_hsn` | `query, limit?` | Free-text keyword search across HSN descriptions (default limit 10, max 50). |
+| `classify_product` | `product_name` | Classify a product name into the most likely HSN code with alternatives + matched tokens. |
+
+Tools marked **Team+** require a Team or Pro subscription. Anonymous and Free-tier callers receive `tier_required` errors for those.
+
+## Quick start
+
+The fastest path — point any MCP-aware client at the hosted endpoint via [`mcp-remote`](https://www.npmjs.com/package/mcp-remote):
+
+```bash
+npx -y mcp-remote https://hsn-classifier-mcp.atlasword.workers.dev/mcp \
+  --header "Authorization: Bearer mck_YOUR_API_KEY"
+```
+
+Get a key at **https://hsn-classifier-mcp.atlasword.workers.dev/upgrade?tier=solo** (see [Getting an API key](#getting-an-api-key)).
+
+## Install in Cursor
+
+Add this to `~/.cursor/mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "hsn-classifier": {
-      "url": "https://hsn-classifier-mcp.prakhar-cognizance.workers.dev/mcp",
-      "headers": { "Authorization": "Bearer <your-key>" }
+    "hsn-classifier-mcp": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://hsn-classifier-mcp.atlasword.workers.dev/mcp",
+        "--header", "Authorization: Bearer mck_YOUR_API_KEY"
+      ]
     }
   }
 }
 ```
 
-Without a key, you get the **free tier (100 calls/month, 10/min)** keyed off your IP.
+Then restart Cursor and the tools appear in the MCP panel.
 
----
+## Install in Claude Desktop
+
+Add this to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "hsn-classifier-mcp": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://hsn-classifier-mcp.atlasword.workers.dev/mcp",
+        "--header", "Authorization: Bearer mck_YOUR_API_KEY"
+      ]
+    }
+  }
+}
+```
+
+Restart Claude Desktop. Tools appear under the slash-command MCP menu.
+
+
+## Getting an API key
+
+1. Visit `https://hsn-classifier-mcp.atlasword.workers.dev/upgrade?tier=solo` (or `tier=team` / `tier=pro`).
+2. Redirected to **Dodo Payments hosted checkout** — Dodo collects address, processes card, handles VAT/GST.
+3. After payment, Dodo fires a signed webhook (`subscription.active`) to the Worker. The Worker mints `mck_<32 random base64url>` and stores it in KV.
+4. You land on `https://hsn-classifier-mcp.atlasword.workers.dev/welcome?key=<api_key>` — copy the key now (it is only displayed once at this URL).
+5. Paste the key into Cursor / Claude Desktop config (see above).
+6. View / rotate / export the account at `https://hsn-classifier-mcp.atlasword.workers.dev/account` (Bearer-auth).
+
+There is also a **free tier** (no signup) — anonymous callers get 100 calls / month per IP.
+
+## Endpoints
+
+| Route | Description |
+|---|---|
+| `POST /mcp` | MCP JSON-RPC 2.0 tool surface (the main API). Bearer auth required for paid tiers. |
+| `GET /health` | Liveness probe — `{ok: true, ts}`. Used by mcp-hub cron. |
+| `GET /` | HTML landing page (OG + favicon + JSON-LD). |
+| `GET /upgrade?tier=solo|team|pro&email=...` | 302 → live Dodo Payments hosted checkout. |
+| `GET /welcome?key=...` | Post-checkout landing showing the freshly-minted API key. |
+| `GET /account` | Bearer-auth. Returns `{apiKey, tier, owner, status, portal_url}`. |
+| `POST /account/rotate` | Bearer-auth. Mints a fresh key + retires the old one. |
+| `GET /account/export` | Bearer-auth. GDPR data export — JSON of account, usage counters, Dodo details. |
+| `GET /account/team` | Bearer-auth (Team+). List team-member sub-keys. |
+| `POST /account/team/invite` | Bearer-auth (Team+). Issue a new team-member sub-key. |
+| `POST /account/team/revoke` | Bearer-auth (Team+). Revoke a team-member sub-key. |
+| `GET /team/accept?key=...` | Team-member onboarding landing for the sub-key URL. |
+| `POST /webhooks/dodo` | Standard-Webhooks signed. Dodo subscription + payment lifecycle. |
+| `GET /favicon.ico` | Inline SVG. |
+
 
 ## Pricing
 
-| Tier  | Price        | Calls/month | Rate     |
-|-------|--------------|-------------|----------|
-| Free  | $0           | 100         | 10/min   |
-| Solo  | $9 / mo      | 2,000       | 60/min   |
-| Team  | $29 / mo     | 10,000      | 200/min  |
-| Pro   | $79 / mo     | 50,000      | 600/min  |
+All tiers share the same monthly + rate caps; the price reflects per-product positioning.
 
-Subscribe at <https://hsn-classifier-mcp.prakhar-cognizance.workers.dev/upgrade?tier=solo>. Powered by [Dodo Payments](https://dodopayments.com) as merchant of record — Dodo handles GST/VAT remittance worldwide.
 
----
+| Tier | Monthly calls | Rate limit | Team seats |
+|---|---|---|---|
+| Free | 100 / month | 10 / minute | 0 |
+| Solo | 2,000 / month | 60 / minute | 0 |
+| Team | 10,000 / month | 200 / minute | 5 |
+| Pro | 50,000 / month | 600 / minute | 25 |
 
-## Dataset
 
-Embedded ~4,700-entry HSN dataset — the **4-digit headings** and **6-digit subheadings** from the CBIC schedule. 8-digit tariff items are not included (4 / 6-digit HSN is what gets reported on most GST invoices). Source: a clean MIT-licensed snapshot at <https://github.com/QuantumByteStudios/gst-hsn-sac-codes>.
+| Plan | Price | Monthly calls | Team seats |
+|---|---|---|---|
+| **Free** | $0 | 100 | 0 |
+| **Solo** | $9/mo | 2,000 | 0 |
+| **Team** | $29/mo | 10,000 | 5 |
+| **Pro** | $79/mo | 50,000 | 25 |
 
-The dataset is baked into the Worker bundle (~73KB gzipped) so lookups are pure local memory access — no external API, no rate limit on the upstream, no flaky network.
+Billed via **Dodo Payments** (merchant-of-record — VAT/GST handled by Dodo). Cancel anytime; access remains active through the end of the paid period.
 
-If the CBIC GST rates update, the embedded `gst_rate` field may lag the current schedule by some weeks — verify against the latest CBIC notification for high-value transactions.
+## Data sources
 
----
+- **Indian HSN / GST code list** — https://www.gst.gov.in/ — *Public dataset (4,676 entries)*
 
-## Self-service
+This server is a thin transport + auth + caching layer over the upstream sources. Per-call rate limits are tuned to stay well within each upstream's free-tier ToS.
 
-- `GET /account` (with `Authorization: Bearer <key>`) — current tier, usage, portal link.
-- `POST /account/rotate` — revoke the current key and mint a new one on the same subscription.
-- Customer portal — manage / cancel / update payment method via Dodo.
+## Privacy + GDPR
 
-Lost your key? Email <prakshatechnologies@gmail.com> with your Dodo subscription ID.
+- **Privacy policy:** [https://mcp-hub.atlasword.workers.dev/privacy](https://mcp-hub.atlasword.workers.dev/privacy)
+- **Terms:** [https://mcp-hub.atlasword.workers.dev/terms](https://mcp-hub.atlasword.workers.dev/terms)
+- **Refund policy:** [https://mcp-hub.atlasword.workers.dev/refund](https://mcp-hub.atlasword.workers.dev/refund)
+- **Data export:** `GET https://hsn-classifier-mcp.atlasword.workers.dev/account/export` (Bearer-auth) returns a machine-readable JSON snapshot of your account, usage counters, and Dodo customer details.
+- **Deletion:** email `prakshatechnologies@gmail.com` from the address on file.
 
----
+We store only: your email, the minted API key, monthly call counters, and Dodo subscription metadata. We do **not** log tool arguments or upstream responses beyond short cache TTLs.
+
+## Architecture
+
+- **Runtime:** Cloudflare Workers (V8 isolates, global edge).
+- **Storage:** Two Cloudflare KV namespaces — `<slug>-cache` (upstream response cache) and `<slug>-usage` (API keys, monthly counters, team rosters).
+- **Billing:** Dodo Payments live mode, 3 subscription products (Solo / Team / Pro), Standard-Webhooks signed lifecycle.
+- **Observability:** Cloudflare Workers Analytics; portfolio rollup at [mcp-hub status](https://mcp-hub.atlasword.workers.dev/status).
+- **Source:** TypeScript, Vitest-tested, `wrangler deploy`-able. See `src/` in this repo.
 
 ## License
 
-MIT © 2026 Prakhar Gupta · <prakshatechnologies@gmail.com>. See `LICENSE` for the dataset attribution.
+MIT — see [LICENSE](LICENSE).
+
+## Author
+
+**Prakhar Gupta**
+- Email: `prakshatechnologies@gmail.com`
+- GitHub: [@guptaprakhariitr](https://github.com/guptaprakhariitr)
+
+## Status
+
+- **Live status page:** [https://mcp-hub.atlasword.workers.dev/status](https://mcp-hub.atlasword.workers.dev/status)
+- **Machine-readable status:** [https://mcp-hub.atlasword.workers.dev/status.json](https://mcp-hub.atlasword.workers.dev/status.json)
+- **Source repo:** [https://github.com/guptaprakhariitr/hsn-classifier-mcp](https://github.com/guptaprakhariitr/hsn-classifier-mcp)
