@@ -203,10 +203,10 @@ MIT — see [LICENSE](LICENSE).
 
 ## Install via npm (one-liner)
 
-A thin launcher is published as [`@atlasword/hsn-classifier-mcp`](https://www.npmjs.com/package/@atlasword/hsn-classifier-mcp) on npm. No manual URL to copy/paste:
+A thin launcher is published as [`@insnapsprakhar/hsn-classifier-mcp`](https://www.npmjs.com/package/@insnapsprakhar/hsn-classifier-mcp) on npm. No manual URL to copy/paste:
 
 ```bash
-npx -y @atlasword/hsn-classifier-mcp
+npx -y @insnapsprakhar/hsn-classifier-mcp
 ```
 
 Or wire it into your MCP client:
@@ -216,7 +216,7 @@ Or wire it into your MCP client:
   "mcpServers": {
     "hsn-classifier": {
       "command": "npx",
-      "args": ["-y", "@atlasword/hsn-classifier-mcp"]
+      "args": ["-y", "@insnapsprakhar/hsn-classifier-mcp"]
     }
   }
 }
