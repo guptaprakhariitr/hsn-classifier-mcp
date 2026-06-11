@@ -3,7 +3,7 @@
   "name": "io.github.guptaprakhariitr/hsn-classifier-mcp",
   "title": "HSN Classifier",
   "description": "Look up Indian HSN and GST codes by description or product name (4,676 entries).",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "websiteUrl": "https://hsn-classifier-mcp.atlasword.workers.dev/",
   "repository": {
     "url": "https://github.com/guptaprakhariitr/hsn-classifier-mcp",
@@ -13,6 +13,16 @@
     {
       "type": "streamable-http",
       "url": "https://hsn-classifier-mcp.atlasword.workers.dev/mcp"
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@insnapsprakhar/hsn-classifier-mcp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      }
     }
   ]
 }
