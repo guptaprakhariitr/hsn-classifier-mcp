@@ -1,0 +1,38 @@
+{
+  "$schema": "https://smithery.ai/schema/server.json",
+  "name": "hsn-classifier-mcp",
+  "displayName": "HSN Classifier",
+  "description": "Look up Indian HSN / GST codes by product description or name. 4,676 entries embedded; runs entirely on Cloudflare Workers.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "homepage": "https://hsn-classifier-mcp.atlasword.workers.dev",
+  "repository": "https://github.com/guptaprakhariitr/hsn-classifier-mcp",
+  "categories": ["finance", "india", "compliance", "regulatory"],
+  "tags": ["hsn", "gst", "india", "tax", "classification", "search"],
+  "transport": {
+    "type": "http",
+    "url": "https://hsn-classifier-mcp.atlasword.workers.dev/mcp"
+  },
+  "auth": {
+    "type": "bearer",
+    "tokenUrl": "https://hsn-classifier-mcp.atlasword.workers.dev/upgrade",
+    "freeTier": {
+      "monthlyCalls": 100,
+      "ratePerMinute": 10,
+      "note": "no API key required — anonymous requests get free-tier quota"
+    }
+  },
+  "pricing": {
+    "currency": "USD",
+    "tiers": [
+      { "name": "Free", "price": 0, "monthlyCalls": 100 },
+      { "name": "Solo", "price": 9, "monthlyCalls": 2000 },
+      { "name": "Team", "price": 29, "monthlyCalls": 10000 },
+      { "name": "Pro",  "price": 79, "monthlyCalls": 50000 }
+    ]
+  },
+  "support": {
+    "issues": "https://github.com/guptaprakhariitr/hsn-classifier-mcp/issues",
+    "email": "prakshatechnologies@gmail.com"
+  }
+}
